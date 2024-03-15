@@ -1,0 +1,52 @@
+import csv
+import numpy as np
+import operator
+
+def read_coordinates(file_path):
+    # Read gene or tissue coordinates from the specified CSV file
+    with open(file_path, mode='r') as infile:
+        reader = csv.reader(infile)
+        next(reader)
+        # Create a dictionary mapping names to coordinate tuples
+        return {columns[0]: (float(columns[1]), float(columns[2])) for columns in reader}
+
+def calculate_distances(genes, tissues, selected_experiment):
+    # Select tissues relevant to the specified experiment
+    selected_tissues = {k: v for k, v in tissues.items() if k.startswith(selected_experiment)}
+
+    # Calculate distances between genes and selected tissues
+    root_distances = {}
+    for gene_name, gene_coords in genes.items():
+        gene_coords_np = np.array(gene_coords)
+        
+        for tissue_name, tissue_coords in selected_tissues.items():
+            tissue_coords_np = np.array(tissue_coords)
+
+            # Use vectorized operations for efficient distance calculation
+            distance = np.linalg.norm(gene_coords_np - tissue_coords_np)
+            
+            # Store the calculated distances in a dictionary
+            root_distances[gene_name] = float(distance)
+
+    return root_distances
+
+def main():
+    # Read gene and tissue coordinates from respective CSV files
+    genes = read_coordinates('path/to/ClustVis-PC-Loadings.csv')
+    tissues = read_coordinates('path/to/ClustVis-PC-Scores.csv')
+
+    # Prompt the user to input the name of the experiment
+    selected_experiment = input("Type the name of the experiment here: ")
+
+    # Calculate distances and retrieve the top 10% closest gene-tissue pairs
+    root_distances = calculate_distances(genes, tissues, selected_experiment)
+
+    N = int(len(root_distances) * 0.1)
+    top_distances = sorted(root_distances.items(), key=operator.itemgetter(1))[:N]
+
+    # Print the results
+    print(f"Top {N} closest gene-tissue pairs: {top_distances}")
+
+if __name__ == "__main__":
+    # Execute the main function when the script is run
+    main()
